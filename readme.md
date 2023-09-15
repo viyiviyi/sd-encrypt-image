@@ -1,0 +1,1 @@
+这是一个sd插件，作用是给python的Image的.jpg格式增加一个.abcd的别称
