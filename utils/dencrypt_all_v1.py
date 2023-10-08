@@ -75,7 +75,7 @@ def main():
     skipped_files = []  # 存储已跳过的文件名
     
     for filename in os.listdir('.'):
-        if filename.endswith('.jpg') or filename.endswith('.png'):  # 只处理jpg和png格式的图片文件
+        if filename.endswith('.jpg') or filename.endswith('.png') or filename.endswith('.webp') or filename.endswith('.jpeg'): 
             output_filename = os.path.join(output_dir, filename)
             if os.path.exists(output_filename):
                 skipped_files.append(filename)

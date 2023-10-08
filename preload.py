@@ -67,9 +67,7 @@ def dencrypt_image(image,psw):
     #         pixels[x, y] = (r,g,b) if len(pix) == 3 else (r,g,b,pix[3])
             
 class EncryptedImage(Image.Image):
-    
     password = ''
-    
     def save(self, filename,*args, **kwargs):
         # 加密图片数据
         if EncryptedImage.password:
