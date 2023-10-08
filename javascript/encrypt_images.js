@@ -1,3 +1,4 @@
+const encrypt_images_loading_list = window.encrypt_images_loading_list || [];
 onUiUpdate(function () {
   // 获取所有的img标签
   if (!opts) return;
@@ -19,6 +20,11 @@ onUiUpdate(function () {
   }
 
   async function get_sha256(input) {
+    // nodejs
+    // const hash = crypto.createHash("sha256");
+    // hash.update(input);
+    // return hash.digest("hex");
+    // 浏览器
     const data = input;
     // 将数据编码为 Uint8Array
     const encoder = new TextEncoder();
@@ -43,7 +49,7 @@ onUiUpdate(function () {
     var key_offset = 0;
     for (var i = 0; i < arr.length; i++) {
       var to_index =
-        parseInt(get_range(sha_key, key_offset, 16), 16) % (arr.length - i);
+        parseInt(get_range(sha_key, key_offset, 8), 16) % (arr.length - i);
       key_offset += 1;
       if (key_offset >= sha_key.length) {
         key_offset = 0;
@@ -54,65 +60,43 @@ onUiUpdate(function () {
     }
     return arr;
   }
-
-  //   async function encrypt_image(image, psw) {
-  //     var x_arr = [];
-  //     for (var i = 0; i < image.width; i++) {
-  //       x_arr.push(i);
-  //     }
-  //     await shuffle_arr(x_arr, psw);
-
-  //     var y_arr = [];
-  //     for (var i = 0; i < image.height; i++) {
-  //       y_arr.push(i);
-  //     }
-
-  //     await shuffle_arr(y_arr, await get_sha256(psw));
-
-  //     var pixels = image.data;
-
-  //     var offfset = 0;
-
-  //     for (var x = 0; x < image.width; x++) {
-  //       for (var y = 0; y < image.height; y++) {
-  //         var pix = pixels[x][y];
-  //         var arr = get_range(psw, offfset, 6);
-  //         offfset += 1;
-  //         if (offfset >= psw.length) offfset = 0;
-
-  //         var r = pix[0] ^ parseInt(arr.substring(0, 2), 16);
-  //         var g = pix[1] ^ parseInt(arr.substring(2, 4), 16);
-  //         var b = pix[2] ^ parseInt(arr.substring(4), 16);
-
-  //         if (pix.length == 3) {
-  //           pixels[x][y] = [r, g, b];
-  //         } else {
-  //           pixels[x][y] = [r, g, b, pix[3]];
-  //         }
-  //       }
-  //     }
-
-  //     for (var x = 0; x < image.width; x++) {
-  //       for (var y = 0; y < image.height; y++) {
-  //         [pixels[x][y], pixels[xarr[x]][yarr[y]]] = [
-  //           pixels[xarr[x]][yarr[y]],
-  //           pixels[x][y],
-  //         ];
-  //       }
-  //     }
-  //   }
-
-  /**
-   * 获取以一维方式存储的rgba位图具体像素在数组中的索引
-   * @param {*} width
-   * @param {*} height
-   * @param {*} x
-   * @param {*} y
-   */
-  function getOffset(width, height, x, y) {
-    let offset = 0;
-    offset += 4 * width * (y - 1) + x * 4;
-    return offset;
+  async function encrypt_image(image, psw) {
+    var x_arr = [];
+    for (var i = 0; i < image.width; i++) {
+      x_arr.push(i);
+    }
+    await shuffle_arr(x_arr, psw);
+    var y_arr = [];
+    for (var i = 0; i < image.height; i++) {
+      y_arr.push(i);
+    }
+    await shuffle_arr(y_arr, await get_sha256(psw));
+    var pixels = image.data;
+    // var offfset = 0;
+    // for (var x = 0; x < image.width; x++) {
+    //   for (var y = 0; y < image.height; y++) {
+    //     var arr = get_range(psw, offfset, 6);
+    //     offfset += 1;
+    //     if (offfset >= psw.length) offfset = 0;
+    //     xy = (y * image.width + x) * 4;
+    //     pixels[xy + 0] = pixels[xy + 0] ^ parseInt(arr.substring(0, 2), 16);
+    //     pixels[xy + 1] = pixels[xy + 1] ^ parseInt(arr.substring(2, 4), 16);
+    //     pixels[xy + 2] = pixels[xy + 2] ^ parseInt(arr.substring(4), 16);
+    //   }
+    // }
+    let temp = 0;
+    for (var x = 0; x < image.width; x++) {
+      for (var y = 0; y < image.height; y++) {
+        var index = (y * image.width + x) * 4;
+        var x_index = (y_arr[y] * image.width + x_arr[x]) * 4;
+        for (var o = 0; o < 4; o++) {
+          temp = pixels[index + o];
+          pixels[index + o] = pixels[x_index + o];
+          pixels[x_index + o] = temp;
+        }
+      }
+    }
+    return pixels;
   }
   async function dencrypt_image(image, psw) {
     var x_arr = [];
@@ -128,30 +112,33 @@ onUiUpdate(function () {
     var pixels = image.data;
     let temp = 0;
     for (var x = 0; x < image.width; x++) {
-      let _x = image.width - x - 1;
+      var _x = image.width - x - 1;
       for (var y = 0; y < image.height; y++) {
-        let _y = image.height - y - 1;
-        let xy = getOffset(image.width, image.height, _x, _y);
-        let _xy = getOffset(image.width, image.height, x_arr[_x], y_arr[_y]);
+        var _y = image.height - y - 1;
+        var index = (_y * image.width + _x) * 4;
+        var x_index = (y_arr[_y] * image.width + x_arr[_x]) * 4;
         for (var o = 0; o < 4; o++) {
-          temp = pixels[xy + o];
-          pixels[xy + o] = pixels[_xy + o];
-          pixels[_xy + o] = temp;
+          temp = pixels[index + o];
+          pixels[index + o] = pixels[x_index + o];
+          pixels[x_index + o] = temp;
         }
       }
     }
-    var offfset = 0;
-    for (var x = 0; x < image.width; x++) {
-      for (var y = 0; y < image.height; y++) {
-        var arr = get_range(psw, offfset, 6);
-        offfset += 1;
-        if (offfset >= psw.length) offfset = 0;
-        xy = getOffset(image.width, image.height, x, y);
-        pixels[xy + 0] = pixels[xy + 0] ^ parseInt(arr.substring(0, 2), 16);
-        pixels[xy + 1] = pixels[xy + 1] ^ parseInt(arr.substring(2, 4), 16);
-        pixels[xy + 2] = pixels[xy + 2] ^ parseInt(arr.substring(4), 16);
-      }
-    }
+    // var offfset = 0;
+    // for (var x = 0; x < image.width; x++) {
+    //   for (var y = 0; y < image.height; y++) {
+    //     var arr = get_range(psw, offfset, 6);
+    //     offfset += 1;
+    //     if (offfset >= psw.length) offfset = 0;
+    //     xy = (y * image.width + x) * 4;
+    //     pixels[xy + 0] =
+    //       pixels[xy + 0] ^ (parseInt(arr.substring(0, 2), 16) & 0xff);
+    //     pixels[xy + 1] =
+    //       pixels[xy + 1] ^ (parseInt(arr.substring(2, 4), 16) & 0xff);
+    //     pixels[xy + 2] =
+    //       pixels[xy + 2] ^ (parseInt(arr.substring(4), 16) & 0xff);
+    //   }
+    // }
     return pixels;
   }
 
@@ -168,14 +155,12 @@ onUiUpdate(function () {
       }
     });
   }
-
   async function bandEvent(imgDom) {
     let img = new Image();
     img = imgDom;
     if (!img.src.startsWith("http")) return;
     // 设置 Canvas 的宽高与图片一致
     let size = await getImgSizee(img.src);
-    console.log(size);
     canvas.width = size.width;
     canvas.height = size.height;
     // 将图片绘制到 Canvas 上
@@ -185,14 +170,30 @@ onUiUpdate(function () {
     imageData.data = await dencrypt_image(imageData, password);
     // 将调整后的像素数据重新绘制到 Canvas 上
     ctx.putImageData(imageData, 0, 0);
-    // 将 Canvas 转换为新的图片
+    // 将还原的图片写回img
     img.src = canvas.toDataURL();
   }
+  var imgs = [];
+  // txt2img output
   var box = document.getElementById("txt2img_gallery");
-  if (!box) return;
-  var imgs = box.getElementsByTagName("img");
-  if (!imgs) return;
-  // 遍历所有的img标签
+  if (box) {
+    imgs.push(...box.getElementsByTagName("img"));
+  }
+  box = document.getElementById("img2img_gallery");
+  if (box) {
+    imgs.push(...box.getElementsByTagName("img"));
+  }
+  box = document.getElementById(
+    "image_browser_tab_txt2img_image_browser_gallery"
+  );
+  if (box) {
+    imgs.push(...box.getElementsByTagName("img"));
+  }
+  box = document.getElementById("lightboxModal");
+  if (box) {
+    imgs.push(...box.getElementsByTagName("img"));
+  }
+  // img2img output
   for (var i = 0; i < imgs.length; i++) {
     // 给每个img标签添加load事件处理函数
     bandEvent(imgs[i]);

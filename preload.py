@@ -1,8 +1,5 @@
 from PIL import Image,JpegImagePlugin
 import hashlib
-import random
-
-Image.register_extension(JpegImagePlugin.JpegImageFile.format, ".abcd")
 
 def get_range(input:str,offset:int,range_len=4):
     if (offset+range_len)<len(input):
@@ -19,7 +16,7 @@ def shuffle_arr(arr,key):
     sha_key = get_sha256(key)
     key_offset = 0
     for i in range(len(arr)):
-        to_index = int(get_range(sha_key,key_offset,range_len=16),16) % (len(arr) -i)
+        to_index = int(get_range(sha_key,key_offset,range_len=8),16) % (len(arr) -i)
         key_offset += 1
         if key_offset >= len(sha_key): key_offset = 0
         arr[i],arr[to_index] = arr[to_index],arr[i]
@@ -31,17 +28,17 @@ def encrypt_image(image,psw):
     y_arr = [i for i in range(image.height)]
     shuffle_arr(y_arr,get_sha256(psw))
     pixels = image.load()
-    offfset = 0
-    for x in range(image.width):
-        for y in range(image.height):
-            pix = pixels[x,y]
-            arr = get_range(psw,offfset,range_len=6)
-            offfset += 1
-            if offfset >= len(psw): offfset = 0
-            r = pix[0]^int(arr[0:2],16)
-            g = pix[1]^int(arr[2:4],16)
-            b = pix[2]^int(arr[4:6],16)
-            pixels[x, y] = (r,g,b) if len(pix) == 3 else (r,g,b,pix[3])
+    # offfset = 0
+    # for x in range(image.width):
+    #     for y in range(image.height):
+    #         pix = pixels[x,y]
+    #         arr = get_range(psw,offfset,range_len=6)
+    #         offfset += 1
+    #         if offfset >= len(psw): offfset = 0
+    #         r = pix[0]^(int(arr[0:2],16)&0xFF)
+    #         g = pix[1]^(int(arr[2:4],16)&0xFF)
+    #         b = pix[2]^(int(arr[4:6],16)&0xFF)
+    #         pixels[x, y] = (r,g,b) if len(pix) == 3 else (r,g,b,pix[3])
     for x in range(image.width):
         for y in range(image.height):
             pixels[x, y], pixels[x_arr[x],y_arr[y]] = pixels[x_arr[x],y_arr[y]],pixels[x, y]
@@ -57,29 +54,29 @@ def dencrypt_image(image,psw):
         for y in range(image.height):
             _y = image.height-y-1
             pixels[_x, _y], pixels[x_arr[_x],y_arr[_y]] = pixels[x_arr[_x],y_arr[_y]],pixels[_x, _y]
-    offfset = 0
-    for x in range(image.width):
-        for y in range(image.height):
-            pix = pixels[x,y]
-            arr = get_range(psw,offfset,range_len=6)
-            offfset += 1
-            if offfset >= len(psw): offfset = 0
-            r = pix[0]^int(arr[0:2],16)
-            g = pix[1]^int(arr[2:4],16)
-            b = pix[2]^int(arr[4:6],16)
-            pixels[x, y] = (r,g,b) if len(pix) == 3 else (r,g,b,pix[3])
+    # offfset = 0
+    # for x in range(image.width):
+    #     for y in range(image.height):
+    #         pix = pixels[x,y]
+    #         arr = get_range(psw,offfset,range_len=6)
+    #         offfset += 1
+    #         if offfset >= len(psw): offfset = 0
+    #         r = pix[0]^int(arr[0:2],16)
+    #         g = pix[1]^int(arr[2:4],16)
+    #         b = pix[2]^int(arr[4:6],16)
+    #         pixels[x, y] = (r,g,b) if len(pix) == 3 else (r,g,b,pix[3])
             
 class EncryptedImage(Image.Image):
     
     password = ''
     
-    def save(self, filename, **kwargs):
+    def save(self, filename,*args, **kwargs):
         # 加密图片数据
         if EncryptedImage.password:
             encrypt_image(self, get_sha256(EncryptedImage.password))
             # dencrypt_image(self, get_sha256(EncryptedImage.password)) # 测试用
         # 创建新的Image对象，并保存加密后的数据
-        super().save(filename, **kwargs)
+        super().save(filename,*args, **kwargs)
 
 Image.Image = EncryptedImage
 
