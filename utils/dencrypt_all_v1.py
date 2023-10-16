@@ -24,17 +24,6 @@ def shuffle_arr(arr,key):
         arr[i],arr[to_index] = arr[to_index],arr[i]
     return arr
 
-def encrypt_image(image,psw):
-    x_arr = [i for i in range(image.width)]
-    shuffle_arr(x_arr,psw)
-    y_arr = [i for i in range(image.height)]
-    shuffle_arr(y_arr,get_sha256(psw))
-    pixels = image.load()
-
-    for x in range(image.width):
-        for y in range(image.height):
-            pixels[x, y], pixels[x_arr[x],y_arr[y]] = pixels[x_arr[x],y_arr[y]],pixels[x, y]
-
 def dencrypt_image(image,psw):
     x_arr = [i for i in range(image.width)]
     shuffle_arr(x_arr,psw)
