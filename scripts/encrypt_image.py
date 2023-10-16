@@ -5,8 +5,7 @@ from modules import shared
 password = getattr(shared.cmd_opts, 'encrypt_pass', None)
 
 if password:
-    print('图片加密已经启动 加密方式 1')
-    EncryptedImage.password = password
+    EncryptedImage.set_password(password)
     section = ("encrypt_image",'图片加密' if shared.opts.localization == 'zh_CN' else "encrypt image" )
     shared.opts.add_option(
         "encrypt_pass_hash",
@@ -17,5 +16,7 @@ if password:
         ),
     )
     shared.opts.data['encrypt_pass_hash'] = get_sha256(password)
+    
+    print('图片加密已经启动 加密方式 1')
 else:
     print('图片加密插件已安装，但缺少密码参数未启动')
