@@ -19,10 +19,14 @@ class EncryptedImage(Image.Image):
     def save(self, filename, format = None, pnginfo=None, *args, **kwargs):
         if not password:
             # 如果没有密码，直接保存
-            super().save(filename, format = format, pnginfo=None, *args, **kwargs)
+            super().save(filename, format = format, pnginfo=pnginfo, *args, **kwargs)
+            return
+        
+        if 'Encrypt' in self.info and self.info['Encrypt'] == 'pixel_shuffle':
+            super().save(filename, format = format, pnginfo=pnginfo, *args, **kwargs)
+            return
         
         encrypt_image(self, get_sha256(password))
-
         self.format = PngImagePlugin.PngImageFile.format
         pnginfo = pnginfo or PngImagePlugin.PngInfo()
         pnginfo.add_text('Encrypt', 'pixel_shuffle')
