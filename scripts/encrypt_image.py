@@ -1,15 +1,13 @@
 
 from modules import shared,script_callbacks
 from scripts.core.core import encrypt_image,get_sha256,dencrypt_image
-from PIL import Image,JpegImagePlugin,PngImagePlugin,WebPImagePlugin
+from PIL import Image,JpegImagePlugin,PngImagePlugin
 from PIL import Image as PILImage
 from io import BytesIO
-import piexif
-import piexif.helper
 from typing import Optional
 from fastapi import FastAPI
 from gradio import Blocks
-from fastapi import APIRouter, Depends, FastAPI, Request, Response
+from fastapi import FastAPI, Request, Response
 
 class EncryptedImage(Image.Image):
     password = ''
@@ -19,19 +17,15 @@ class EncryptedImage(Image.Image):
     def open(fp,*args, **kwargs):
         image = PILImage.open(fp,*args, **kwargs)
         encrypt_type = ''
-        print('read*********')
+
         if image.format.lower() == PngImagePlugin.PngImageFile.format.lower():
             pnginfo = image.info or PngImagePlugin.PngInfo()
             encrypt_type = pnginfo["Encrypt"]
-        elif image.format.lower() in (JpegImagePlugin.JpegImageFile.format.lower(), WebPImagePlugin.WebPImageFile.format.lower()):
-            # exif_dict = piexif.load(image.info["exif"])
-            # encrypt_type = exif_dict["Exif"]['Encrypt']
-            encrypt_type = ''
-            
+
         if encrypt_type == 'pixel_shuffle':
             print('dencrypt: '+str(fp))
-            dencrypt_image(image, EncryptedImage.password)
-        return image
+            dencrypt_image(image, get_sha256(EncryptedImage.password))
+        return EncryptedImage(image)
 
     def save(self, filename, format = None, pnginfo=None, *args, **kwargs):
         if not EncryptedImage.password:
@@ -40,23 +34,16 @@ class EncryptedImage(Image.Image):
         
         encrypt_image(self, get_sha256(EncryptedImage.password))
 
-        self.format = format or self.format or PngImagePlugin.PngImageFile.format
-        if self.format.lower() == PngImagePlugin.PngImageFile.format.lower():
-            pnginfo = pnginfo or PngImagePlugin.PngInfo()
-            pnginfo.add_text('Encrypt', 'pixel_shuffle')
-            super().save(filename, format=format, pnginfo=pnginfo, *args, **kwargs)
-        elif self.format.lower() in (JpegImagePlugin.JpegImageFile.format.lower(), WebPImagePlugin.WebPImageFile.format.lower()):
-            super().save(filename, format=format, *args, **kwargs)
-            
-        else:
-            super().save(filename, format=format, *args, **kwargs)
+        self.format = PngImagePlugin.PngImageFile.format
+        pnginfo = pnginfo or PngImagePlugin.PngInfo()
+        pnginfo.add_text('Encrypt', 'pixel_shuffle')
+        super().save(filename, format=self.format, pnginfo=pnginfo, *args, **kwargs)
 
 Image.Image = EncryptedImage
 
 password = getattr(shared.cmd_opts, 'encrypt_pass', None)
 
 def on_app_started(demo: Optional[Blocks], app: FastAPI):
-    
     @app.middleware("http")
     async def image_dencrypt(req: Request, call_next):
         endpoint:str = req.scope.get('path', 'err')
@@ -66,17 +53,20 @@ def on_app_started(demo: Optional[Blocks], app: FastAPI):
             ex = file_path[file_path.rindex('.'):].lower()
             if ex in ['.png','.jpg','.jpeg','.webp','.abcd']:
                 image = PILImage.open(file_path)
-                dencrypt_image(image,get_sha256(EncryptedImage.password))
-                buffered = BytesIO()
-                image.save(buffered, format=JpegImagePlugin.JpegImageFile.format)
-                decrypted_image_data = buffered.getvalue()
-                response: Response = Response(content=decrypted_image_data, media_type="image/jpeg")
-                return response
+                if image.format.lower() == PngImagePlugin.PngImageFile.format.lower():
+                    pnginfo = image.info or PngImagePlugin.PngInfo()
+                    if 'Encrypt' in pnginfo:
+                        if pnginfo['Encrypt'] == 'pixel_shuffle':
+                            dencrypt_image(image,get_sha256(EncryptedImage.password))
+                            buffered = BytesIO()
+                            image.save(buffered, format=JpegImagePlugin.JpegImageFile.format)
+                            decrypted_image_data = buffered.getvalue()
+                            response: Response = Response(content=decrypted_image_data, media_type="image/jpeg")
+                            return response
         res: Response = await call_next(req)
         return res
 
 script_callbacks.on_app_started(on_app_started)
-    
 
 if password:
     print('图片加密已经启动 加密方式 1')
