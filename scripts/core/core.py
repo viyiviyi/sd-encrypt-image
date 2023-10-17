@@ -66,4 +66,3 @@ def dencrypt_image(image,psw):
     #         b = pix[2]^int(arr[4:6],16)
     #         pixels[x, y] = (r,g,b) if len(pix) == 3 else (r,g,b,pix[3])
     
-    print('***********')

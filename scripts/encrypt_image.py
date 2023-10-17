@@ -16,21 +16,17 @@ class EncryptedImage(Image.Image):
     @staticmethod
     def open(fp,*args, **kwargs):
         image = PILImage.open(fp,*args, **kwargs)
-        encrypt_type = ''
-
-        if image.format.lower() == PngImagePlugin.PngImageFile.format.lower():
+        if EncryptedImage.password and image.format.lower() == PngImagePlugin.PngImageFile.format.lower():
             pnginfo = image.info or PngImagePlugin.PngInfo()
-            encrypt_type = pnginfo["Encrypt"]
-
-        if encrypt_type == 'pixel_shuffle':
-            print('dencrypt: '+str(fp))
-            dencrypt_image(image, get_sha256(EncryptedImage.password))
-        return EncryptedImage(image)
+            if 'Encrypt' in pnginfo and pnginfo["Encrypt"] == 'pixel_shuffle':
+                dencrypt_image(image, get_sha256(EncryptedImage.password))
+                return EncryptedImage(image)
+        return image
 
     def save(self, filename, format = None, pnginfo=None, *args, **kwargs):
         if not EncryptedImage.password:
             # 如果没有密码，直接保存
-            super().save(filename, format = format, *args, **kwargs)
+            super().save(filename, format = format, pnginfo=None, *args, **kwargs)
         
         encrypt_image(self, get_sha256(EncryptedImage.password))
 
@@ -46,10 +42,10 @@ password = getattr(shared.cmd_opts, 'encrypt_pass', None)
 def on_app_started(demo: Optional[Blocks], app: FastAPI):
     @app.middleware("http")
     async def image_dencrypt(req: Request, call_next):
+        res: Response = await call_next(req)
         endpoint:str = req.scope.get('path', 'err')
         if endpoint.startswith('/file='):
             file_path = endpoint[6:]
-            print(file_path)
             ex = file_path[file_path.rindex('.'):].lower()
             if ex in ['.png','.jpg','.jpeg','.webp','.abcd']:
                 image = PILImage.open(file_path)
@@ -59,11 +55,10 @@ def on_app_started(demo: Optional[Blocks], app: FastAPI):
                         if pnginfo['Encrypt'] == 'pixel_shuffle':
                             dencrypt_image(image,get_sha256(EncryptedImage.password))
                             buffered = BytesIO()
-                            image.save(buffered, format=JpegImagePlugin.JpegImageFile.format)
+                            image.save(buffered, format=PngImagePlugin.PngImageFile.format)
                             decrypted_image_data = buffered.getvalue()
-                            response: Response = Response(content=decrypted_image_data, media_type="image/jpeg")
+                            response: Response = Response(content=decrypted_image_data, media_type="image/png",headers=req.headers)
                             return response
-        res: Response = await call_next(req)
         return res
 
 script_callbacks.on_app_started(on_app_started)
