@@ -1,38 +1,36 @@
 
 from modules import shared,script_callbacks,scripts as md_scripts
 from scripts.core.core import encrypt_image,get_sha256,dencrypt_image
-from PIL import Image,JpegImagePlugin,PngImagePlugin
+from PIL import PngImagePlugin
 from PIL import Image as PILImage
-import numpy as np
 from io import BytesIO
 from typing import Optional
 from fastapi import FastAPI
 from gradio import Blocks
 from fastapi import FastAPI, Request, Response
-import os
 
 repo_dir = md_scripts.basedir()
 password = getattr(shared.cmd_opts, 'encrypt_pass', None)
 super_open = PILImage.open
 
-class EncryptedImage(Image.Image):
-    def save(self, filename, format = None, pnginfo=None, *args, **kwargs):
+class EncryptedImage(PILImage.Image):
+    def save(self, fp, format=None, **params):
         if not password:
             # 如果没有密码，直接保存
-            super().save(filename, format = format, pnginfo=pnginfo, *args, **kwargs)
+            super().save(fp, format = format, **params)
             return
         
         if 'Encrypt' in self.info and self.info['Encrypt'] == 'pixel_shuffle':
-            super().save(filename, format = format, pnginfo=pnginfo, *args, **kwargs)
+            super().save(fp, format = format, **params)
             return
         
         encrypt_image(self, get_sha256(password))
         self.format = PngImagePlugin.PngImageFile.format
-        pnginfo = pnginfo or PngImagePlugin.PngInfo()
+        pnginfo = params.get('pnginfo', PngImagePlugin.PngInfo())
         pnginfo.add_text('Encrypt', 'pixel_shuffle')
-        super().save(filename, format=self.format, pnginfo=pnginfo, *args, **kwargs)
+        params.update(pnginfo=pnginfo)
+        super().save(fp, format=self.format, **params)
 
-PILImage.Image = EncryptedImage
         
 def open(fp,*args, **kwargs):
     image = super_open(fp,*args, **kwargs)
@@ -43,7 +41,6 @@ def open(fp,*args, **kwargs):
             return image
     return image
 
-PILImage.open = open
 
 def on_app_started(demo: Optional[Blocks], app: FastAPI):
     @app.middleware("http")
@@ -70,6 +67,8 @@ def on_app_started(demo: Optional[Blocks], app: FastAPI):
 script_callbacks.on_app_started(on_app_started)
 
 if password:
+    PILImage.Image = EncryptedImage
+    PILImage.open = open
     print('图片加密已经启动 加密方式 1')
 else:
     print('图片加密插件已安装，但缺少密码参数未启动')
