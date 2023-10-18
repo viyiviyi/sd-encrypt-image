@@ -32,7 +32,6 @@ class EncryptedImage(Image.Image):
         pnginfo.add_text('Encrypt', 'pixel_shuffle')
         super().save(filename, format=self.format, pnginfo=pnginfo, *args, **kwargs)
 
-PILImage.Image = EncryptedImage
         
 def open(fp,*args, **kwargs):
     image = super_open(fp,*args, **kwargs)
@@ -43,7 +42,10 @@ def open(fp,*args, **kwargs):
             return image
     return image
 
-PILImage.open = open
+if not getattr(shared, "sd_webui_encrypt_image", None):
+    shared.sd_webui_encrypt_image = (PILImage.Image, PILImage.open)
+    PILImage.Image = EncryptedImage
+    PILImage.open = open
 
 def on_app_started(demo: Optional[Blocks], app: FastAPI):
     @app.middleware("http")
