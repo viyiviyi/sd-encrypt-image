@@ -11,7 +11,12 @@ from fastapi import FastAPI, Request, Response
 
 repo_dir = md_scripts.basedir()
 password = getattr(shared.cmd_opts, 'encrypt_pass', None)
-super_open = PILImage.open
+
+super_functions = getattr(shared, "sd_webui_encrypt_image", None)
+if super_functions:
+    super_open = PILImage.open = super_functions[1]
+else:
+    super_open = PILImage.open
 
 class EncryptedImage(PILImage.Image):
     def save(self, fp, format=None, **params):
@@ -50,6 +55,7 @@ def on_app_started(demo: Optional[Blocks], app: FastAPI):
             file_path = endpoint[6:]
             ex = file_path[file_path.rindex('.'):].lower()
             if ex in ['.png','.jpg','.jpeg','.webp','.abcd']:
+                print(file_path)
                 image = super_open(file_path)
                 if image.format.lower() == PngImagePlugin.PngImageFile.format.lower():
                     pnginfo = image.info or PngImagePlugin.PngInfo()
@@ -66,11 +72,11 @@ def on_app_started(demo: Optional[Blocks], app: FastAPI):
 
 
 if password:
-  if not getattr(shared, "sd_webui_encrypt_image", None):
-    shared.sd_webui_encrypt_image = (PILImage.Image, PILImage.open)
-    PILImage.Image = EncryptedImage
-    PILImage.open = open
-  script_callbacks.on_app_started(on_app_started)
-  print('图片加密已经启动 加密方式 1')
+    if not super_functions:
+        shared.sd_webui_encrypt_image = (PILImage.Image, PILImage.open)
+        PILImage.Image = EncryptedImage
+        PILImage.open = open
+    script_callbacks.on_app_started(on_app_started)
+    print('图片加密已经启动 加密方式 1')
 else:
     print('图片加密插件已安装，但缺少密码参数未启动')
