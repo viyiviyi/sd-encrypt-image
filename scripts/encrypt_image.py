@@ -64,11 +64,11 @@ def on_app_started(demo: Optional[Blocks], app: FastAPI):
         res: Response = await call_next(req)
         return res
 
-script_callbacks.on_app_started(on_app_started)
 
 if password:
     PILImage.Image = EncryptedImage
     PILImage.open = open
+    script_callbacks.on_app_started(on_app_started)
     print('图片加密已经启动 加密方式 1')
 else:
     print('图片加密插件已安装，但缺少密码参数未启动')
