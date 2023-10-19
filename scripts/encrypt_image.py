@@ -72,7 +72,7 @@ if PILImage.Image.__name__ != 'EncryptedImage':
         with io.BytesIO() as output_bytes:
             image.save(output_bytes, format="PNG", quality=opts.jpeg_quality)
             pnginfo = image.info or PngImagePlugin.PngInfo()
-            print(pnginfo.keys())
+            
             if 'Encrypt' in pnginfo and pnginfo["Encrypt"] == 'pixel_shuffle':
                 dencrypt_image(image,get_sha256(password))
                 pnginfo["Encrypt"] = None
