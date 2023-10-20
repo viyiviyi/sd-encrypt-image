@@ -61,7 +61,7 @@ if PILImage.Image.__name__ != 'EncryptedImage':
     def open(fp,*args, **kwargs):
         image = super_open(fp,*args, **kwargs)
         if password and image.format.lower() == PngImagePlugin.PngImageFile.format.lower():
-            pnginfo = image.info or PngImagePlugin.PngInfo()
+            pnginfo = image.info or {}
             if 'Encrypt' in pnginfo and pnginfo["Encrypt"] == 'pixel_shuffle':
                 dencrypt_image(image, get_sha256(password))
                 pnginfo["Encrypt"] = None
@@ -71,7 +71,7 @@ if PILImage.Image.__name__ != 'EncryptedImage':
     def encode_pil_to_base64(image:PILImage.Image):
         with io.BytesIO() as output_bytes:
             image.save(output_bytes, format="PNG", quality=opts.jpeg_quality)
-            pnginfo = image.info or PngImagePlugin.PngInfo()
+            pnginfo = image.info or {}
             
             if 'Encrypt' in pnginfo and pnginfo["Encrypt"] == 'pixel_shuffle':
                 dencrypt_image(image,get_sha256(password))
@@ -95,7 +95,7 @@ def on_app_started(demo: Optional[Blocks], app: FastAPI):
             if ex in ['.png','.jpg','.jpeg','.webp','.abcd']:
                 image = PILImage.open(file_path)
                 if image.format.lower() == PngImagePlugin.PngImageFile.format.lower():
-                    pnginfo = image.info or PngImagePlugin.PngInfo()
+                    pnginfo = image.info or {}
                     if 'Encrypt' in pnginfo:
                         buffered = BytesIO()
                         image.save(buffered, format=PngImagePlugin.PngImageFile.format)
