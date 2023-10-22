@@ -2,11 +2,11 @@
 import base64
 import io
 from pathlib import Path
-from modules import shared,script_callbacks,scripts as md_scripts
+from modules import shared,script_callbacks,scripts as md_scripts,images
 from modules.api import api
 from modules.shared import opts
 from scripts.core.core import encrypt_image,get_sha256,dencrypt_image
-from PIL import PngImagePlugin,_util
+from PIL import PngImagePlugin,_util,ImagePalette
 from PIL import Image as PILImage
 from io import BytesIO
 from typing import Optional
@@ -21,9 +21,37 @@ password = getattr(shared.cmd_opts, 'encrypt_pass', None)
 if PILImage.Image.__name__ != 'EncryptedImage':
     super_open = PILImage.open
     super_encode_pil_to_base64 = api.encode_pil_to_base64
-    
+    super_modules_images_save_image = images.save_image
     class EncryptedImage(PILImage.Image):
         __name__ = "EncryptedImage"
+        
+        def __init__(self,image:PILImage.Image=None):
+            super().__init__()
+            if image:
+                new_image:PILImage.Image = image._new(image.im)
+                self.im = new_image.im
+                self.mode = image.mode
+                self._size = image.size
+                self.format = image.format
+                if image.mode in ("P", "PA"):
+                    if self.palette:
+                        self.palette = self.palette.copy()
+                    else:
+                        self.palette = ImagePalette.ImagePalette()
+                self.info = image.info.copy()
+            
+        def from_image(self,image:PILImage.Image):
+            self.im = image._new(image.im)
+            self.mode = image.mode
+            self._size = image.size
+            self.format = image.format
+            if image.mode in ("P", "PA"):
+                if self.palette:
+                    self.palette = self.palette.copy()
+                else:
+                    self.palette = ImagePalette.ImagePalette()
+            self.info = image.info.copy()
+            
         def save(self, fp, format=None, **params):
             filename = ""
             if isinstance(fp, Path):
@@ -65,6 +93,7 @@ if PILImage.Image.__name__ != 'EncryptedImage':
             if 'Encrypt' in pnginfo and pnginfo["Encrypt"] == 'pixel_shuffle':
                 dencrypt_image(image, get_sha256(password))
                 pnginfo["Encrypt"] = None
+                image = EncryptedImage(image=image)
                 return image
         return image
     
@@ -83,7 +112,7 @@ if PILImage.Image.__name__ != 'EncryptedImage':
         PILImage.Image = EncryptedImage
         PILImage.open = open
         api.encode_pil_to_base64 = encode_pil_to_base64
-        
+
 
 def on_app_started(demo: Optional[Blocks], app: FastAPI):
     @app.middleware("http")
