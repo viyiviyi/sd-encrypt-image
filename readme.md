@@ -1,10 +1,12 @@
-# stable-diffusion-webui 图片加密插件
+# [stable-diffusion-webui 图片加密插件](https://github.com/viyiviyi/sd-encrypt-image.git)
+
+中文 | [english](readme.en.md)
 
 **这是一个stable-diffusion-webui的插件，实现了在图片保存到磁盘前对图片进行加密，在访问时响应解密后的图片的功能，便于在使用公有云时安全的存储图片而降低封号风险**
 
 - 这个插件会修改Image对象，重写了save方法，启用将会导致所有的图片保存行为都被加密
 - 如果忘记密码，可能会导致你无法还原你的图像。
-- 未知原因导致插件无法在不同功能间传递图像，比如txt2img到img2img。
+- ~未知原因导致插件无法在不同功能间传递图像，比如txt2img到img2img。~ (已修复)
 - 图片的保存格式需要设置成png，否则会导致保存图片时出现错误。
 - 可能还存在其他未知问题，因为此功能实现的方式对其他访问图片的功能或插件都会有影响。
 
