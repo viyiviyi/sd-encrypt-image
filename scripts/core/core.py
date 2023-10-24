@@ -1,5 +1,6 @@
 from PIL import Image
 import hashlib
+import numpy as np
 
 def get_range(input:str,offset:int,range_len=4):
     input = input+input
@@ -51,3 +52,52 @@ def dencrypt_image(image:Image.Image, psw):
             _y = y_arr[y]
             pixels[x, y], pixels[_x,_y] = pixels[_x,_y],pixels[x, y]
     
+def encrypt_image_v2(image:Image.Image, psw):
+    width = image.width
+    height = image.height
+    x_arr = [i for i in range(width)]
+    shuffle_arr(x_arr,psw)
+    y_arr = [i for i in range(height)]
+    shuffle_arr(y_arr,get_sha256(psw))
+    pixel_array = np.array(image)
+
+    for y in range(height):
+        _y = y_arr[y]
+        temp = pixel_array[y].copy()
+        pixel_array[y] = pixel_array[_y]
+        pixel_array[_y] = temp
+    pixel_array = np.transpose(pixel_array, axes=(1, 0, 2))
+    for x in range(width):
+        _x = x_arr[x]
+        temp = pixel_array[x].copy()
+        pixel_array[x] = pixel_array[_x]
+        pixel_array[_x] = temp
+    pixel_array = np.transpose(pixel_array, axes=(1, 0, 2))
+
+    image = Image.fromarray(pixel_array)
+    return image
+
+def dencrypt_image_v2(image:Image.Image, psw):
+    width = image.width
+    height = image.height
+    x_arr = [i for i in range(width)]
+    shuffle_arr(x_arr,psw)
+    y_arr = [i for i in range(height)]
+    shuffle_arr(y_arr,get_sha256(psw))
+    pixel_array = np.array(image)
+
+    pixel_array = np.transpose(pixel_array, axes=(1, 0, 2))
+    for x in range(width-1,-1,-1):
+        _x = x_arr[x]
+        temp = pixel_array[x].copy()
+        pixel_array[x] = pixel_array[_x]
+        pixel_array[_x] = temp
+    pixel_array = np.transpose(pixel_array, axes=(1, 0, 2))
+    for y in range(height-1,-1,-1):
+        _y = y_arr[y]
+        temp = pixel_array[y].copy()
+        pixel_array[y] = pixel_array[_y]
+        pixel_array[_y] = temp
+
+    image = Image.fromarray(pixel_array)
+    return image
