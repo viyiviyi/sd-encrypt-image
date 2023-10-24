@@ -98,11 +98,11 @@ def main():
                 image = Image.open(filename)
                 pnginfo = image.info or {}
                 if 'Encrypt' in pnginfo and pnginfo["Encrypt"] == 'pixel_shuffle':
-                    dencrypt_image(image, get_sha256(password))
+                    dencrypt_image(image, password)
                     pnginfo["Encrypt"] = None
                     image.save(output_filename)
                 if 'Encrypt' in pnginfo and pnginfo["Encrypt"] == 'pixel_shuffle_2':
-                    dencrypt_image_v2(image, get_sha256(password))
+                    dencrypt_image_v2(image, password)
                     pnginfo["Encrypt"] = None
                     image.save(output_filename)
                 image.close()
