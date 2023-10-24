@@ -5,7 +5,7 @@ from pathlib import Path
 from modules import shared,script_callbacks,scripts as md_scripts,images
 from modules.api import api
 from modules.shared import opts
-from scripts.core.core import encrypt_image,get_sha256,dencrypt_image
+from scripts.core.core import encrypt_image,get_sha256,dencrypt_image,dencrypt_image_v2,encrypt_image_v2
 from PIL import PngImagePlugin,_util,ImagePalette
 from PIL import Image as PILImage
 from io import BytesIO
@@ -72,16 +72,16 @@ if PILImage.Image.__name__ != 'EncryptedImage':
                 super().save(fp, format = format, **params)
                 return
             
-            if 'Encrypt' in self.info and self.info['Encrypt'] == 'pixel_shuffle':
+            if 'Encrypt' in self.info and (self.info['Encrypt'] == 'pixel_shuffle' or self.info['Encrypt'] == 'pixel_shuffle_2'):
                 super().save(fp, format = format, **params)
                 return
             
-            encrypt_image(self, get_sha256(password))
+            encrypt_image_v2(self, get_sha256(password))
             self.format = PngImagePlugin.PngImageFile.format
             if self.info:
-                self.info['Encrypt'] = 'pixel_shuffle'
+                self.info['Encrypt'] = 'pixel_shuffle_2'
             pnginfo = params.get('pnginfo', PngImagePlugin.PngInfo())
-            pnginfo.add_text('Encrypt', 'pixel_shuffle')
+            pnginfo.add_text('Encrypt', 'pixel_shuffle_2')
             params.update(pnginfo=pnginfo)
             super().save(fp, format=self.format, **params)
 
@@ -95,15 +95,22 @@ if PILImage.Image.__name__ != 'EncryptedImage':
                 pnginfo["Encrypt"] = None
                 image = EncryptedImage(image=image)
                 return image
+            if 'Encrypt' in pnginfo and pnginfo["Encrypt"] == 'pixel_shuffle_2':
+                dencrypt_image_v2(image, get_sha256(password))
+                pnginfo["Encrypt"] = None
+                image = EncryptedImage(image=image)
+                return image
         return image
     
     def encode_pil_to_base64(image:PILImage.Image):
         with io.BytesIO() as output_bytes:
             image.save(output_bytes, format="PNG", quality=opts.jpeg_quality)
             pnginfo = image.info or {}
-            
             if 'Encrypt' in pnginfo and pnginfo["Encrypt"] == 'pixel_shuffle':
-                dencrypt_image(image,get_sha256(password))
+                dencrypt_image(image, get_sha256(password))
+                pnginfo["Encrypt"] = None
+            if 'Encrypt' in pnginfo and pnginfo["Encrypt"] == 'pixel_shuffle_2':
+                dencrypt_image_v2(image, get_sha256(password))
                 pnginfo["Encrypt"] = None
             bytes_data = output_bytes.getvalue()
         return base64.b64encode(bytes_data)
@@ -123,19 +130,18 @@ def on_app_started(demo: Optional[Blocks], app: FastAPI):
             ex = file_path[file_path.rindex('.'):].lower()
             if ex in ['.png','.jpg','.jpeg','.webp','.abcd']:
                 image = PILImage.open(file_path)
-                if image.format.lower() == PngImagePlugin.PngImageFile.format.lower():
-                    pnginfo = image.info or {}
-                    if 'Encrypt' in pnginfo:
-                        buffered = BytesIO()
-                        image.save(buffered, format=PngImagePlugin.PngImageFile.format)
-                        decrypted_image_data = buffered.getvalue()
-                        response: Response = Response(content=decrypted_image_data, media_type="image/png")
-                        return response
+                pnginfo = image.info or {}
+                if 'Encrypt' in pnginfo:
+                    buffered = BytesIO()
+                    image.save(buffered, format=PngImagePlugin.PngImageFile.format)
+                    decrypted_image_data = buffered.getvalue()
+                    response: Response = Response(content=decrypted_image_data, media_type="image/png")
+                    return response
         res: Response = await call_next(req)
         return res
 
 if password:
     script_callbacks.on_app_started(on_app_started)
-    print('图片加密已经启动 加密方式 1')
+    print('图片加密已经启动 加密方式 2')
 else:
     print('图片加密插件已安装，但缺少密码参数未启动')
