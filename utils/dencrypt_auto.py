@@ -2,15 +2,15 @@ import os
 from PIL import Image
 import hashlib
 import sys
+import numpy as np
 
 def get_range(input:str,offset:int,range_len=4):
-    if (offset+range_len)<len(input):
-        return input[offset:offset+range_len]
-    else: return input[offset:]+input[:range_len - (len(input) - offset)]
+    input = input+input
+    offset = offset % len(input)
+    return input[offset:offset+range_len]
 
 def get_sha256(input:str):
     hash_object = hashlib.sha256()
-    # 更新hash对象的内容
     hash_object.update(input.encode('utf-8'))
     return hash_object.hexdigest()
 
@@ -24,7 +24,7 @@ def shuffle_arr(arr,key):
         arr[i],arr[to_index] = arr[to_index],arr[i]
     return arr
 
-def dencrypt_image(image,psw):
+def dencrypt_image(image:Image.Image,psw):
     x_arr = [i for i in range(image.width)]
     shuffle_arr(x_arr,psw)
     y_arr = [i for i in range(image.height)]
