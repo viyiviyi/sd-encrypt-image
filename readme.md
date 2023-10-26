@@ -8,7 +8,7 @@
 - 如果忘记密码，可能会导致你无法还原你的图像。
 - ~未知原因导致插件无法在不同功能间传递图像，比如txt2img到img2img。~ (已修复)
 - 图片的保存格式需要设置成png，否则会导致保存图片时出现错误。
-- 可能还存在其他未知问题，因为此功能实现的方式对其他访问图片的功能或插件都会有影响。
+- 可能还存在其他未知问题，因为此插件工作在PIL库读取图片和保存图片的时候（重写了 save方法和open方法）。
 
 ## 启用方式
 
@@ -18,8 +18,8 @@
 ## 批量解密脚本使用方式
 
 1. 将utils文件夹内的 dencrypt_image_all.py 文件放到包含加密图片的文件夹（尽量文件夹内只有已加密的图片，否则正常文件解密后会得到乱码的文件，不会影响原文件）
-2. 如果有Python环境，在图片文件夹打开命令行 执行 ```python dencrypt_image_all.py``` (dencrypt_image_all.py 只是示例名，实际名称看你复制的脚本文件)
-3. 如果没有Python环境，需要安装Python环境后再执行步骤2，也可以使用发行版的 dencrypt_images_v1.exe 软件
+2. 如果有Python环境，在图片文件夹打开命令行 执行 ```python dencrypt_image_auto.py``` (dencrypt_image_all.py 只是示例名，实际名称看你复制的脚本文件)
+3. 如果没有Python环境，需要安装Python环境后再执行步骤2，也可以使用[发行版](https://github.com/viyiviyi/sd-encrypt-image/releases)的 [dencrypt_images_v2.exe](https://github.com/viyiviyi/sd-encrypt-image/releases/download/1.0/dencrypt_images_v2.exe) 软件
 
 ## 特别说明
 
