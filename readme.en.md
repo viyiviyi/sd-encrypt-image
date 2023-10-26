@@ -8,7 +8,7 @@
 - Forgetting the password may result in an inability to restore your images.
 - ~Due to unknown reasons, the plugin may not pass images between different functions, such as from txt2img to img2img.~ (Fixed)
 - The image save format needs to be set as PNG; otherwise, errors may occur during image saving.
-- There may be other unknown issues because this implementation affects other functions or plugins that access images.
+- There may be other unknown issues as this plugin works with PIL library to read and save images (by overriding the save and open methods).
 
 ## How to Enable
 
