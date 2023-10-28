@@ -85,7 +85,7 @@ if PILImage.Image.__name__ != 'EncryptedImage':
             params.update(pnginfo=pnginfo)
             super().save(fp, format=self.format, **params)
 
-            
+
     def open(fp,*args, **kwargs):
         image = super_open(fp,*args, **kwargs)
         if password and image.format.lower() == PngImagePlugin.PngImageFile.format.lower():
@@ -120,11 +120,23 @@ if PILImage.Image.__name__ != 'EncryptedImage':
         PILImage.open = open
         api.encode_pil_to_base64 = encode_pil_to_base64
 
-
 def on_app_started(demo: Optional[Blocks], app: FastAPI):
+    from urllib.parse import unquote
     @app.middleware("http")
     async def image_dencrypt(req: Request, call_next):
         endpoint:str = req.scope.get('path', 'err')
+        # 兼容无边浏览器
+        if endpoint.startswith('/infinite_image_browsing/image-thumbnail') or endpoint.startswith('/infinite_image_browsing/file'):
+            query_string:str = req.scope.get('query_string').decode('utf-8')
+            query_string = unquote(query_string)
+            if query_string and query_string.index('path=')>=0:
+                query = query_string.split('&')
+                path = ''
+                for sub in query:
+                    if sub.startswith('path='):
+                        path = sub[sub.index('=')+1:]
+                if path:
+                    endpoint = '/file=' + path
         if endpoint.startswith('/file='):
             file_path = endpoint[6:]
             ex = file_path[file_path.rindex('.'):].lower()
