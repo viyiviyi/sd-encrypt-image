@@ -25,32 +25,21 @@ if PILImage.Image.__name__ != 'EncryptedImage':
     class EncryptedImage(PILImage.Image):
         __name__ = "EncryptedImage"
         
-        def __init__(self,image:PILImage.Image=None):
-            super().__init__()
-            if image:
-                new_image:PILImage.Image = image._new(image.im)
-                self.im = new_image.im
-                self.mode = image.mode
-                self._size = image.size
-                self.format = image.format
-                if image.mode in ("P", "PA"):
-                    if self.palette:
-                        self.palette = self.palette.copy()
-                    else:
-                        self.palette = ImagePalette.ImagePalette()
-                self.info = image.info.copy()
-            
-        def from_image(self,image:PILImage.Image):
-            self.im = image._new(image.im)
-            self.mode = image.mode
-            self._size = image.size
-            self.format = image.format
+        @staticmethod
+        def from_image(image:PILImage.Image):
+            image = image.copy()
+            img = EncryptedImage()
+            img.im = image.im
+            img.mode = image.mode
+            img._size = image.size
+            img.format = image.format
             if image.mode in ("P", "PA"):
-                if self.palette:
-                    self.palette = self.palette.copy()
+                if image.palette:
+                    img.palette = image.palette.copy()
                 else:
-                    self.palette = ImagePalette.ImagePalette()
-            self.info = image.info.copy()
+                    img.palette = ImagePalette.ImagePalette()
+            img.info = image.info.copy()
+            return img
             
         def save(self, fp, format=None, **params):
             filename = ""
@@ -93,14 +82,14 @@ if PILImage.Image.__name__ != 'EncryptedImage':
             if 'Encrypt' in pnginfo and pnginfo["Encrypt"] == 'pixel_shuffle':
                 dencrypt_image(image, get_sha256(password))
                 pnginfo["Encrypt"] = None
-                image = EncryptedImage(image=image)
+                image = EncryptedImage.from_image(image=image)
                 return image
             if 'Encrypt' in pnginfo and pnginfo["Encrypt"] == 'pixel_shuffle_2':
                 dencrypt_image_v2(image, get_sha256(password))
                 pnginfo["Encrypt"] = None
-                image = EncryptedImage(image=image)
+                image = EncryptedImage.from_image(image=image)
                 return image
-        return image
+        return EncryptedImage.from_image(image=image)
     
     def encode_pil_to_base64(image:PILImage.Image):
         with io.BytesIO() as output_bytes:
@@ -134,6 +123,18 @@ def on_app_started(demo: Optional[Blocks], app: FastAPI):
                 path = ''
                 for sub in query:
                     if sub.startswith('path='):
+                        path = sub[sub.index('=')+1:]
+                if path:
+                    endpoint = '/file=' + path
+        # 模型预览图
+        if endpoint.startswith('/sd_extra_networks/thumb'):
+            query_string:str = req.scope.get('query_string').decode('utf-8')
+            query_string = unquote(query_string)
+            if query_string and query_string.index('filename=')>=0:
+                query = query_string.split('&')
+                path = ''
+                for sub in query:
+                    if sub.startswith('filename='):
                         path = sub[sub.index('=')+1:]
                 if path:
                     endpoint = '/file=' + path
