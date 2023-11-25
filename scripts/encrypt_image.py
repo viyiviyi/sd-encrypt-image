@@ -73,6 +73,9 @@ if PILImage.Image.__name__ != 'EncryptedImage':
             pnginfo.add_text('Encrypt', 'pixel_shuffle_2')
             params.update(pnginfo=pnginfo)
             super().save(fp, format=self.format, **params)
+            # 保存到文件后解密内存内的图片，让直接在内存内使用时图片正常
+            dencrypt_image_v2(self, get_sha256(password))  
+            
 
 
     def open(fp,*args, **kwargs):
