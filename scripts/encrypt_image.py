@@ -144,9 +144,11 @@ def on_app_started(demo: Optional[Blocks], app: FastAPI):
                 if path:
                     endpoint = '/file=' + path
         if endpoint.startswith('/file='):
-            file_path = endpoint[6:]
-            ex = file_path[file_path.rindex('.'):].lower()
-            if ex in ['.png','.jpg','.jpeg','.webp','.abcd']:
+            file_path = endpoint[6:] or ''
+            if not file_path: return await call_next(req)
+            if file_path.rfind('.') == -1: return await call_next(req)
+            if not file_path[file_path.rfind('.'):]: return await call_next(req)
+            if file_path[file_path.rfind('.'):].lower() in ['.png','.jpg','.jpeg','.webp','.abcd']:
                 image = PILImage.open(file_path)
                 pnginfo = image.info or {}
                 if 'Encrypt' in pnginfo:
