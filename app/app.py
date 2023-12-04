@@ -1,4 +1,4 @@
-from PIL import Image as PILImage
+from PIL import Image as PILImage,PngImagePlugin
 from core import get_sha256,dencrypt_image,dencrypt_image_v2
 import os
 
@@ -60,11 +60,19 @@ def encrypt_files():
                 if 'Encrypt' in pnginfo and pnginfo["Encrypt"] == 'pixel_shuffle':
                     dencrypt_image(image, password)
                     pnginfo["Encrypt"] = None
+                    info = PngImagePlugin.PngInfo()
+                    for key in pnginfo.keys():
+                        if pnginfo[key]:
+                            info.add_text(key,pnginfo[key])
                     image.save(output_filename)
                 if 'Encrypt' in pnginfo and pnginfo["Encrypt"] == 'pixel_shuffle_2':
                     dencrypt_image_v2(image, password)
                     pnginfo["Encrypt"] = None
-                    image.save(output_filename)
+                    info = PngImagePlugin.PngInfo()
+                    for key in pnginfo.keys():
+                        if pnginfo[key]:
+                            info.add_text(key,pnginfo[key])
+                    image.save(output_filename,pnginfo=info)
                 image.close()
                     
             except Exception as e:

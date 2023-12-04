@@ -1,5 +1,5 @@
 import os
-from PIL import Image
+from PIL import Image,PngImagePlugin
 import hashlib
 import sys
 import numpy as np
@@ -95,16 +95,24 @@ def main():
                 print(f"已跳过 {filename} 文件")
                 continue
             try:
-                image = Image.open(filename)
+                image = Image.open(filename,formats=['PNG'])
                 pnginfo = image.info or {}
                 if 'Encrypt' in pnginfo and pnginfo["Encrypt"] == 'pixel_shuffle':
                     dencrypt_image(image, password)
                     pnginfo["Encrypt"] = None
+                    info = PngImagePlugin.PngInfo()
+                    for key in pnginfo.keys():
+                        if pnginfo[key]:
+                            info.add_text(key,pnginfo[key])
                     image.save(output_filename)
                 if 'Encrypt' in pnginfo and pnginfo["Encrypt"] == 'pixel_shuffle_2':
                     dencrypt_image_v2(image, password)
                     pnginfo["Encrypt"] = None
-                    image.save(output_filename)
+                    info = PngImagePlugin.PngInfo()
+                    for key in pnginfo.keys():
+                        if pnginfo[key]:
+                            info.add_text(key,pnginfo[key])
+                    image.save(output_filename,pnginfo=info)
                 image.close()
             except Exception as e:
                 print(str(e))
