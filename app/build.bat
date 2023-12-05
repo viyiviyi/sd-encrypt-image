@@ -1,1 +1,1 @@
-pyinstaller -F -w -n 解密程序_v2.exe app.py
+pyinstaller -F -w -n dencrypt_images_v2.1.exe app.py

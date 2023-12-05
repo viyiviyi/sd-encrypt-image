@@ -153,7 +153,11 @@ def on_app_started(demo: Optional[Blocks], app: FastAPI):
                 pnginfo = image.info or {}
                 if 'Encrypt' in pnginfo:
                     buffered = BytesIO()
-                    image.save(buffered, format=PngImagePlugin.PngImageFile.format)
+                    info = PngImagePlugin.PngInfo()
+                    for key in pnginfo.keys():
+                        if pnginfo[key]:
+                            info.add_text(key,pnginfo[key])
+                    image.save(buffered, format=PngImagePlugin.PngImageFile.format, pnginfo=info)
                     decrypted_image_data = buffered.getvalue()
                     response: Response = Response(content=decrypted_image_data, media_type="image/png")
                     return response
