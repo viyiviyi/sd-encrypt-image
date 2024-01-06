@@ -1,6 +1,6 @@
 # [stable-diffusion-webui 图片加密插件](https://github.com/viyiviyi/sd-encrypt-image.git)
 
-中文 | [english](readme.en.md)
+[中文](readme.md) | [english](readme.en.md)
 
 **这是一个stable-diffusion-webui的插件，实现了在图片保存到磁盘前对图片进行加密，在访问时响应解密后的图片的功能，便于在使用公有云时安全的存储图片而降低封号风险**
 
