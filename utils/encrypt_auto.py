@@ -1,7 +1,3 @@
-'''
-这个文件是 https://github.com/Echoflare 提供的加密多线程版本，有更高的执行效率
-'''
-
 import os
 from PIL import Image,PngImagePlugin
 import hashlib
