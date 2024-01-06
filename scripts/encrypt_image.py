@@ -30,7 +30,7 @@ if PILImage.Image.__name__ != 'EncryptedImage':
             image = image.copy()
             img = EncryptedImage()
             img.im = image.im
-            img.mode = image.mode
+            img._mode = image.mode
             img._size = image.size
             img.format = image.format
             if image.mode in ("P", "PA"):
