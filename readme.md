@@ -9,7 +9,7 @@
 - ~未知原因导致插件无法在不同功能间传递图像，比如txt2img到img2img。~ (已修复)
 - 图片的保存格式需要设置成png，否则会导致保存图片时出现错误。
 - 可能还存在其他未知问题，因为此插件工作在PIL库读取图片和保存图片的时候（重写了 save方法和open方法）。
-- 独立的加密解密程序已经完成，包括winddows和安卓端，Linux需要自行打包。 [https://github.com/viyiviyi/encrypt_gallery/releases/](https://github.com/viyiviyi/encrypt_gallery/releases/)
+- 独立的加密解密程序已经完成，包括windows和安卓端，Linux需要自行打包。 [https://github.com/viyiviyi/encrypt_gallery/releases/](https://github.com/viyiviyi/encrypt_gallery/releases/)
   
 ## 启用方式
 
