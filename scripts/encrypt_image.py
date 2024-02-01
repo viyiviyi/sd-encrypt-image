@@ -72,22 +72,18 @@ if PILImage.Image.__name__ != 'EncryptedImage':
             
             encrypt_image_v2(self, get_sha256(password))
             self.format = PngImagePlugin.PngImageFile.format
-            if self.info:
-                self.info['Encrypt'] = 'pixel_shuffle_2'
-                self.info['EncryptPwdSha'] = get_sha256(f'{get_sha256(password)}Encrypt')
             pnginfo = params.get('pnginfo', PngImagePlugin.PngInfo())
             if not pnginfo:
                 pnginfo = PngImagePlugin.PngInfo()
             pnginfo.add_text('Encrypt', 'pixel_shuffle_2')
             pnginfo.add_text('EncryptPwdSha', get_sha256(f'{get_sha256(password)}Encrypt'))
+            for key in self.info.keys():
+                if self.info[key]:
+                    pnginfo.add_text(key,self.info[key])
             params.update(pnginfo=pnginfo)
             super().save(fp, format=self.format, **params)
             # 保存到文件后解密内存内的图片，让直接在内存内使用时图片正常
-            dencrypt_image_v2(self, get_sha256(password)) 
-            if self.info:
-                self.info['Encrypt'] = None
-                self.info['EncryptPwdSha'] = None
-                # self.info['EncryptToken'] = None
+            dencrypt_image_v2(self, get_sha256(password))
             
 
 
