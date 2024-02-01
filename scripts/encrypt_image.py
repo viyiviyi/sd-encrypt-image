@@ -77,7 +77,7 @@ if PILImage.Image.__name__ != 'EncryptedImage':
                 pnginfo = PngImagePlugin.PngInfo()
             pnginfo.add_text('Encrypt', 'pixel_shuffle_2')
             pnginfo.add_text('EncryptPwdSha', get_sha256(f'{get_sha256(password)}Encrypt'))
-            for key in self.info.keys():
+            for key in (self.info or {}).keys():
                 if self.info[key]:
                     pnginfo.add_text(key,self.info[key])
             params.update(pnginfo=pnginfo)
