@@ -14,6 +14,7 @@ from fastapi import FastAPI
 from gradio import Blocks
 from fastapi import FastAPI, Request, Response
 import sys
+import gradio as gr
 
 repo_dir = md_scripts.basedir()
 password = getattr(shared.cmd_opts, 'encrypt_pass', None)
@@ -170,15 +171,8 @@ def on_app_started(demo: Optional[Blocks], app: FastAPI):
                     return response
         res: Response = await call_next(req)
         return res
-
-if password:
-    script_callbacks.on_app_started(on_app_started)
-    print('图片加密已经启动 加密方式 2')
-   
-else:
-    print('图片加密插件已安装，但缺少密码参数未启动')
-
-def on_ui_settings():
+    
+    # 传递插件状态到前端
     section = ("encrypt_image_is_enable",'图片加密' if shared.opts.localization == 'zh_CN' else "encrypt image" )
     option = shared.OptionInfo(
             default="是",
@@ -192,4 +186,9 @@ def on_ui_settings():
     )
     shared.opts.data['encrypt_image_is_enable'] = "是"
 
-script_callbacks.on_ui_settings(on_ui_settings)
+if password:
+    script_callbacks.on_app_started(on_app_started)
+    print('图片加密已经启动 加密方式 2')
+   
+else:
+    print('图片加密插件已安装，但缺少密码参数未启动')
