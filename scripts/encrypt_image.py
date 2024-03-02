@@ -174,5 +174,22 @@ def on_app_started(demo: Optional[Blocks], app: FastAPI):
 if password:
     script_callbacks.on_app_started(on_app_started)
     print('图片加密已经启动 加密方式 2')
+   
 else:
     print('图片加密插件已安装，但缺少密码参数未启动')
+
+def on_ui_settings():
+    section = ("encrypt_image_is_enable",'图片加密' if shared.opts.localization == 'zh_CN' else "encrypt image" )
+    option = shared.OptionInfo(
+            default="是",
+            label='是否启用了加密插件' if shared.opts.localization == 'zh_CN' else "Whether the encryption plug-in is enabled",
+            section=section,
+        )
+    option.do_not_save = True
+    shared.opts.add_option(
+        "encrypt_image_is_enable",
+        option,
+    )
+    shared.opts.data['encrypt_image_is_enable'] = "是"
+
+script_callbacks.on_ui_settings(on_ui_settings)
