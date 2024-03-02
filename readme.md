@@ -10,6 +10,7 @@
 - 图片的保存格式需要设置成png，否则会导致保存图片时出现错误。
 - 可能还存在其他未知问题，因为此插件工作在PIL库读取图片和保存图片的时候（重写了 save方法和open方法）。
 - 独立的加密解密程序已经完成，包括windows和安卓端，Linux需要自行打包。 [https://github.com/viyiviyi/encrypt_gallery/releases/](https://github.com/viyiviyi/encrypt_gallery/releases/)
+- 虽然已经没啥需要维护的了，但还是求个赞助。[爱发电主页](https://afdian.net/a/yiyiooo)
   
 ## 启用方式
 
