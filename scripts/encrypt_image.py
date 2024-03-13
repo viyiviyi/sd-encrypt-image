@@ -116,79 +116,77 @@ if PILImage.Image.__name__ != 'EncryptedImage':
                 pnginfo["Encrypt"] = None
             bytes_data = output_bytes.getvalue()
         return base64.b64encode(bytes_data)
-    
+  
+    def app_started_callback(demo: Optional[Blocks], app: FastAPI):
+        from urllib.parse import unquote
+        @app.middleware("http")
+        async def image_dencrypt(req: Request, call_next):
+            endpoint:str = req.scope.get('path', 'err')
+            # 兼容无边浏览器
+            if endpoint.startswith('/infinite_image_browsing/image-thumbnail') or endpoint.startswith('/infinite_image_browsing/file'):
+                query_string:str = req.scope.get('query_string').decode('utf-8')
+                query_string = unquote(query_string)
+                if query_string and query_string.index('path=')>=0:
+                    query = query_string.split('&')
+                    path = ''
+                    for sub in query:
+                        if sub.startswith('path='):
+                            path = sub[sub.index('=')+1:]
+                    if path:
+                        endpoint = '/file=' + path
+            # 模型预览图
+            if endpoint.startswith('/sd_extra_networks/thumb'):
+                query_string:str = req.scope.get('query_string').decode('utf-8')
+                query_string = unquote(query_string)
+                if query_string and query_string.index('filename=')>=0:
+                    query = query_string.split('&')
+                    path = ''
+                    for sub in query:
+                        if sub.startswith('filename='):
+                            path = sub[sub.index('=')+1:]
+                    if path:
+                        endpoint = '/file=' + path
+            if endpoint.startswith('/file='):
+                file_path = endpoint[6:] or ''
+                if not file_path: return await call_next(req)
+                if file_path.rfind('.') == -1: return await call_next(req)
+                if not file_path[file_path.rfind('.'):]: return await call_next(req)
+                if file_path[file_path.rfind('.'):].lower() in ['.png','.jpg','.jpeg','.webp','.abcd']:
+                    image = PILImage.open(file_path)
+                    pnginfo = image.info or {}
+                    if 'Encrypt' in pnginfo:
+                        buffered = BytesIO()
+                        info = PngImagePlugin.PngInfo()
+                        for key in pnginfo.keys():
+                            if pnginfo[key]:
+                                info.add_text(key,pnginfo[key])
+                        image.save(buffered, format=PngImagePlugin.PngImageFile.format, pnginfo=info)
+                        decrypted_image_data = buffered.getvalue()
+                        response: Response = Response(content=decrypted_image_data, media_type="image/png")
+                        return response
+            res: Response = await call_next(req)
+            return res
+        
+        # 传递插件状态到前端
+        section = ("encrypt_image_is_enable",'图片加密' if shared.opts.localization == 'zh_CN' else "encrypt image" )
+        option = shared.OptionInfo(
+                default="是",
+                label='是否启用了加密插件' if shared.opts.localization == 'zh_CN' else "Whether the encryption plug-in is enabled",
+                section=section,
+            )
+        option.do_not_save = True
+        shared.opts.add_option(
+            "encrypt_image_is_enable",
+            option,
+        )
+        shared.opts.data['encrypt_image_is_enable'] = "是"
+  
     if password:
         PILImage.Image = EncryptedImage
         PILImage.open = open
         api.encode_pil_to_base64 = encode_pil_to_base64
-
-def on_app_started(demo: Optional[Blocks], app: FastAPI):
-    from urllib.parse import unquote
-    @app.middleware("http")
-    async def image_dencrypt(req: Request, call_next):
-        endpoint:str = req.scope.get('path', 'err')
-        # 兼容无边浏览器
-        if endpoint.startswith('/infinite_image_browsing/image-thumbnail') or endpoint.startswith('/infinite_image_browsing/file'):
-            query_string:str = req.scope.get('query_string').decode('utf-8')
-            query_string = unquote(query_string)
-            if query_string and query_string.index('path=')>=0:
-                query = query_string.split('&')
-                path = ''
-                for sub in query:
-                    if sub.startswith('path='):
-                        path = sub[sub.index('=')+1:]
-                if path:
-                    endpoint = '/file=' + path
-        # 模型预览图
-        if endpoint.startswith('/sd_extra_networks/thumb'):
-            query_string:str = req.scope.get('query_string').decode('utf-8')
-            query_string = unquote(query_string)
-            if query_string and query_string.index('filename=')>=0:
-                query = query_string.split('&')
-                path = ''
-                for sub in query:
-                    if sub.startswith('filename='):
-                        path = sub[sub.index('=')+1:]
-                if path:
-                    endpoint = '/file=' + path
-        if endpoint.startswith('/file='):
-            file_path = endpoint[6:] or ''
-            if not file_path: return await call_next(req)
-            if file_path.rfind('.') == -1: return await call_next(req)
-            if not file_path[file_path.rfind('.'):]: return await call_next(req)
-            if file_path[file_path.rfind('.'):].lower() in ['.png','.jpg','.jpeg','.webp','.abcd']:
-                image = PILImage.open(file_path)
-                pnginfo = image.info or {}
-                if 'Encrypt' in pnginfo:
-                    buffered = BytesIO()
-                    info = PngImagePlugin.PngInfo()
-                    for key in pnginfo.keys():
-                        if pnginfo[key]:
-                            info.add_text(key,pnginfo[key])
-                    image.save(buffered, format=PngImagePlugin.PngImageFile.format, pnginfo=info)
-                    decrypted_image_data = buffered.getvalue()
-                    response: Response = Response(content=decrypted_image_data, media_type="image/png")
-                    return response
-        res: Response = await call_next(req)
-        return res
+        script_callbacks.on_app_started(app_started_callback)
+        print('图片加密已经启动 加密方式 2')
     
-    # 传递插件状态到前端
-    section = ("encrypt_image_is_enable",'图片加密' if shared.opts.localization == 'zh_CN' else "encrypt image" )
-    option = shared.OptionInfo(
-            default="是",
-            label='是否启用了加密插件' if shared.opts.localization == 'zh_CN' else "Whether the encryption plug-in is enabled",
-            section=section,
-        )
-    option.do_not_save = True
-    shared.opts.add_option(
-        "encrypt_image_is_enable",
-        option,
-    )
-    shared.opts.data['encrypt_image_is_enable'] = "是"
-
-if password:
-    script_callbacks.on_app_started(on_app_started)
-    print('图片加密已经启动 加密方式 2')
-   
-else:
-    print('图片加密插件已安装，但缺少密码参数未启动')
+    else:
+        print('图片加密插件已安装，但缺少密码参数未启动')
