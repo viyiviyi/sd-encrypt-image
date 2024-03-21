@@ -24,6 +24,7 @@ def hook_http_request(app: FastAPI):
     @app.middleware("http")
     async def image_dencrypt(req: Request, call_next):
         endpoint:str = req.scope.get('path', 'err')
+        endpoint='/'+endpoint.strip('/')
         # 兼容无边浏览器
         if endpoint.startswith('/infinite_image_browsing/image-thumbnail') or endpoint.startswith('/infinite_image_browsing/file'):
             query_string:str = req.scope.get('query_string').decode('utf-8')
