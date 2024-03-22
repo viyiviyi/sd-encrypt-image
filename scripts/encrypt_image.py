@@ -18,7 +18,7 @@ from urllib.parse import unquote
 
 repo_dir = md_scripts.basedir()
 password = getattr(shared.cmd_opts, 'encrypt_pass', None)
-
+api_enable = getattr(shared.cmd_opts, 'api', False)
 
 def hook_http_request(app: FastAPI):
     @app.middleware("http")
@@ -201,6 +201,8 @@ if PILImage.Image.__name__ != 'EncryptedImage':
 if password:
     script_callbacks.on_app_started(app_started_callback)
     print('图片加密已经启动 加密方式 2')
+    if not api_enable:
+        print('请添加启动参数 --api，否则不能正常查看图片')
 
 else:
     print('图片加密插件已安装，但缺少密码参数未启动')
