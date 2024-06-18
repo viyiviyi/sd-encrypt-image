@@ -38,7 +38,7 @@ def encrypt_image(image:Image.Image, psw):
             _y = y_arr[y]
             pixels[x, y], pixels[_x,_y] = pixels[_x,_y],pixels[x, y]
 
-def dencrypt_image(image:Image.Image, psw):
+def decrypt_image(image:Image.Image, psw):
     width = image.width
     height = image.height
     x_arr = [i for i in range(width)]
@@ -77,7 +77,7 @@ def encrypt_image_v2(image:Image.Image, psw):
     image.paste(Image.fromarray(pixel_array))
     return image
 
-def dencrypt_image_v2(image:Image.Image, psw):
+def decrypt_image_v2(image:Image.Image, psw):
     width = image.width
     height = image.height
     x_arr = [i for i in range(width)]

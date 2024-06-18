@@ -5,7 +5,7 @@ from pathlib import Path
 from modules import shared,script_callbacks,scripts as md_scripts,images
 from modules.api import api
 from modules.shared import opts
-from scripts.core.core import get_sha256,dencrypt_image,dencrypt_image_v2,encrypt_image_v2
+from scripts.core.core import decrypt_image_v3, encrypt_image_v3, get_sha256,decrypt_image,decrypt_image_v2,encrypt_image_v2
 from PIL import PngImagePlugin,_util,ImagePalette
 from PIL import Image as PILImage
 from io import BytesIO
@@ -138,25 +138,24 @@ if PILImage.Image.__name__ != 'EncryptedImage':
                 super().save(fp, format = format, **params)
                 return
             
-            if 'Encrypt' in self.info and (self.info['Encrypt'] == 'pixel_shuffle' or self.info['Encrypt'] == 'pixel_shuffle_2'):
+            if 'Encrypt' in self.info and (self.info['Encrypt'] == 'pixel_shuffle' or self.info['Encrypt'] == 'pixel_shuffle_2' or self.info['Encrypt'] == 'pixel_shuffle_3'):
                 super().save(fp, format = format, **params)
                 return
-            
-            encrypt_image_v2(self, get_sha256(password))
+            back_img = PILImage.new('RGBA', self.size)
+            back_img.paste(self)
+            self.paste(PILImage.fromarray(encrypt_image_v3(self, get_sha256(password))))
             self.format = PngImagePlugin.PngImageFile.format
             pnginfo = params.get('pnginfo', PngImagePlugin.PngInfo())
             if not pnginfo:
                 pnginfo = PngImagePlugin.PngInfo()
-            pnginfo.add_text('Encrypt', 'pixel_shuffle_2')
+            pnginfo.add_text('Encrypt', 'pixel_shuffle_3')
             pnginfo.add_text('EncryptPwdSha', get_sha256(f'{get_sha256(password)}Encrypt'))
             for key in (self.info or {}).keys():
                 if self.info[key]:
                     pnginfo.add_text(key,str(self.info[key]))
             params.update(pnginfo=pnginfo)
             super().save(fp, format=self.format, **params)
-            # 保存到文件后解密内存内的图片，让直接在内存内使用时图片正常
-            dencrypt_image_v2(self, get_sha256(password))
-            
+            self.paste(back_img)
 
 
     def open(fp,*args, **kwargs):
@@ -164,12 +163,17 @@ if PILImage.Image.__name__ != 'EncryptedImage':
         if password and image.format.lower() == PngImagePlugin.PngImageFile.format.lower():
             pnginfo = image.info or {}
             if 'Encrypt' in pnginfo and pnginfo["Encrypt"] == 'pixel_shuffle':
-                dencrypt_image(image, get_sha256(password))
+                decrypt_image(image, get_sha256(password))
                 pnginfo["Encrypt"] = None
                 image = EncryptedImage.from_image(image=image)
                 return image
             if 'Encrypt' in pnginfo and pnginfo["Encrypt"] == 'pixel_shuffle_2':
-                dencrypt_image_v2(image, get_sha256(password))
+                decrypt_image_v2(image, get_sha256(password))
+                pnginfo["Encrypt"] = None
+                image = EncryptedImage.from_image(image=image)
+                return image
+            if 'Encrypt' in pnginfo and pnginfo["Encrypt"] == 'pixel_shuffle_3':
+                image.paste(PILImage.fromarray(decrypt_image_v3(image, get_sha256(password))))
                 pnginfo["Encrypt"] = None
                 image = EncryptedImage.from_image(image=image)
                 return image
@@ -177,14 +181,17 @@ if PILImage.Image.__name__ != 'EncryptedImage':
     
     def encode_pil_to_base64(image:PILImage.Image):
         with io.BytesIO() as output_bytes:
-            image.save(output_bytes, format="PNG", quality=opts.jpeg_quality)
             pnginfo = image.info or {}
             if 'Encrypt' in pnginfo and pnginfo["Encrypt"] == 'pixel_shuffle':
-                dencrypt_image(image, get_sha256(password))
+                decrypt_image(image, get_sha256(password))
                 pnginfo["Encrypt"] = None
             if 'Encrypt' in pnginfo and pnginfo["Encrypt"] == 'pixel_shuffle_2':
-                dencrypt_image_v2(image, get_sha256(password))
+                decrypt_image_v2(image, get_sha256(password))
                 pnginfo["Encrypt"] = None
+            if 'Encrypt' in pnginfo and pnginfo["Encrypt"] == 'pixel_shuffle_3':
+                image.paste(PILImage.fromarray(decrypt_image_v3(image, get_sha256(password))))
+                pnginfo["Encrypt"] = None
+            image.save(output_bytes, format="PNG", quality=opts.jpeg_quality)
             bytes_data = output_bytes.getvalue()
         return base64.b64encode(bytes_data)
   
@@ -200,7 +207,7 @@ if PILImage.Image.__name__ != 'EncryptedImage':
         
 if password:
     script_callbacks.on_app_started(app_started_callback)
-    print('图片加密已经启动 加密方式 2')
+    print('图片加密已经启动 加密方式 3')
     if not api_enable:
         print('请添加启动参数 --api，否则不能正常查看图片')
 

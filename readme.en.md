@@ -20,7 +20,7 @@
 
 1. Place the dencrypt_auto.py file from the utils folder in the folder containing the encrypted images (it is recommended to have only encrypted images in the folder, otherwise normal files will be decrypted and result in garbled files, which will not affect the original files).
 2. If you have a Python environment, open the command line in the image folder and execute ```python dencrypt_auto.py```. You need to install the pillow and numpy libraries.
-3. If you don't have a Python environment, install the Python environment and then execute step 2. You can also use the [dencrypt_images_v2.exe](https://github.com/viyiviyi/sd-encrypt-image/releases/download/1.0/dencrypt_images_v2.1.exe) software from the [release](https://github.com/viyiviyi/sd-encrypt-image/releases) of the project.
+3. If you don't have a Python environment, install the Python environment and then execute step 2. You can also use the [decrypt_images_v2.exe](https://github.com/viyiviyi/sd-encrypt-image/releases/download/1.0/decrypt_images_v2.1.exe) software from the [release](https://github.com/viyiviyi/sd-encrypt-image/releases) of the project.
 
 ## Batch processing
 
