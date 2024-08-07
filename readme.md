@@ -6,7 +6,7 @@
 
 - 这个插件会修改Image对象，重写了save方法，启用将会导致所有的图片保存行为都被加密
 - 如果忘记密码，可能会导致你无法还原你的图像。
-- 需要增加 ```--api``` 启动参数来保证在网页可以正常浏览图片。
+- ~~需要增加 ```--api``` 启动参数来保证在网页可以正常浏览图片。~~
 - 图片的保存格式需要设置成png，否则会导致保存图片时出现错误。
 - 可能还存在其他未知问题，因为此插件工作在PIL库读取图片和保存图片的时候（重写了 save方法和open方法）。
 - 独立的加密解密程序已经完成，包括windows和安卓端，Linux需要自行打包。 [https://github.com/viyiviyi/encrypt_gallery/releases/](https://github.com/viyiviyi/encrypt_gallery/releases/)

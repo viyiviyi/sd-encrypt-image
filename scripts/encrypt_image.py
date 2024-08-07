@@ -87,6 +87,9 @@ def set_shared_options():
 
 def app_started_callback(_: Blocks, app: FastAPI):
     set_shared_options()
+    app.middleware_stack = None  # reset current middleware to allow modifying user provided list
+    hook_http_request(app)
+    app.build_middleware_stack()  # rebuild middleware stack on-the-fly
     
 
 if PILImage.Image.__name__ != 'EncryptedImage':
@@ -195,21 +198,17 @@ if PILImage.Image.__name__ != 'EncryptedImage':
             bytes_data = output_bytes.getvalue()
         return base64.b64encode(bytes_data)
   
-    def api_middleware(app: FastAPI):
-        super_api_middleware(app)
-        hook_http_request(app)
   
     if password:
         PILImage.Image = EncryptedImage
         PILImage.open = open
         api.encode_pil_to_base64 = encode_pil_to_base64
-        api.api_middleware = api_middleware
         
 if password:
     script_callbacks.on_app_started(app_started_callback)
     print('图片加密已经启动 加密方式 3')
-    if not api_enable:
-        print('请添加启动参数 --api，否则不能正常查看图片')
+    # if not api_enable:
+    #     print('请添加启动参数 --api，否则不能正常查看图片')
 
 else:
     print('图片加密插件已安装，但缺少密码参数未启动')
